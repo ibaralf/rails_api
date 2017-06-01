@@ -10,7 +10,10 @@ class SlashinatorController < ApplicationController
 
   def parseit
     puts "PASSED PARAMS: #{params}"
-    resp = {'status': 200, 'message': 'GOT IT!'}
+    token = params[:token]
+    Rails.logger.info "Year: #{Time.now.year}"
+    Rails.logger.info "%%%%%%% ALL PARAMS : #{params}"
+    resp = {'status': 200, 'message': 'GOT IT!', 'read':''}
     render :json => resp, :status => 200
   end
   
