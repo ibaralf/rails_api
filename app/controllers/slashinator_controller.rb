@@ -13,7 +13,7 @@ class SlashinatorController < ApplicationController
     token = params[:token]
     Rails.logger.info "Year: #{Time.now.year}"
     Rails.logger.info "%%%%%%% ALL PARAMS : #{params}"
-    resp = {'status': 200, 'message': 'GOT IT!', 'read':''}
+    resp = {'status': 200, 'message': 'GOT IT!', 'read':token}
     render :json => resp, :status => 200
   end
   
