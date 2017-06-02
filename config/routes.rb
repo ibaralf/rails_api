@@ -3,7 +3,7 @@ Rails.application.routes.draw do
     resources :items
   end
   
-  get '/slash' => 'slashinator#index'
-  post '/slash' => 'slashinator#parseit'
-  post '/selected_instance' => 'slashinator#selected_instance'
+  get '/slash' => 'slircle#index'
+  post '/slash' => 'slircle#parseit'
+  post '/slash_action' => 'slircle#slash_action'
 end
