@@ -45,7 +45,12 @@ module SlircleHelper
             ] }
        ]
     } ] }
-  return instance_json
+    return instance_json
+  end
+
+  def handle_action(posted_params)
+    slaction = Slaction.new(posted_params)
+    slaction.to_string
   end
 
   
