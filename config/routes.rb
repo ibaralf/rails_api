@@ -5,4 +5,5 @@ Rails.application.routes.draw do
   
   get '/slash' => 'slashinator#index'
   post '/slash' => 'slashinator#parseit'
+  post '/selected_instance' => 'slashinator#selected_instance'
 end

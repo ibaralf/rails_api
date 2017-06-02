@@ -19,17 +19,23 @@ class SlashinatorController < ApplicationController
 
     render :json => resp, :status => 200
   end
+
+  def selected_instance
+    Rails.logger.info "SELECTED_INSTANCE PARAMS : #{params}"
+    resp = {'status': 200, 'message': 'SELECTED!'}
+    render :json => resp, :status => 200
+  end
   
   private
 
   def get_which_instance
     instance_json = {
     "text": "Did you want to run a test?",
-    "attachments": [
-        {
+    "attachments": [ 
+      {  
             "text": "Choose environment to execute test.",
             "fallback": "You need to specify test instance.",
-            "callback_id": "tupshop_instance",
+            "callback_id": "selected_instance",
             "color": "#3AA3E3",
             "attachment_type": "default",
             "actions": [
