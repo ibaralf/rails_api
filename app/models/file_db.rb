@@ -60,7 +60,12 @@ class FileDB
   def read_data(fname)
     full_path = File.dirname(__FILE__) + "/../../" + fname
     if File.file?(full_path)
-      return YAML.load_file(fname)
+      existing_yaml = YAML.load_file(fname)
+      if existing_yaml
+        return existing_yaml
+      else
+        return []
+      end
     else
       return []
     end
