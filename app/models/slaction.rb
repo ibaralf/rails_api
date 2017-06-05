@@ -21,7 +21,8 @@ class Slaction
 
   def slice_payload(payload)
     file_db = FileDB.new()
-
+    Rails.logger.info "SLICEPAY : #{payload}"
+    Rails.logger.info "SLICEPAY : #{payload[:actions]}"
     payload.has_key?('actions') ? slice_action(payload[:actions]) : @action = ''
     @response_url = payload[:response_url]
     @token = payload[:token]

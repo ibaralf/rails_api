@@ -96,14 +96,18 @@ module SlircleHelper
   def handle_action(posted_params)
     Rails.logger.info "HANDLE_ACTION : #{posted_params.class}"
     Rails.logger.info "HANDLE_ACTION : #{posted_params}"
-    slaction = Slaction.new(posted_params)
+    @file_db = FileDB.new()
+    @file_db.action_add(posted_params)
+    #slaction = Slaction.new(posted_params)
     
-    case slaction.action
+    case @file_db.get_value(:action_name)
     when 'instance'
       action_instance_selected(posted_params)
       #post_circleci(slaction.action_value)
     when 'spec_selected'
-      action_spec_selected()
+      action_spec_selected(posted_params)
+    else 
+      Rails.logger.info "ERROR Unhandled slack action: #{@file_db.action_name}"
     end
     
   end
