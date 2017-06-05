@@ -94,6 +94,7 @@ module SlircleHelper
   end
 
   def handle_action(posted_params)
+    Rails.logger.info "HANDLE_ACTION : #{posted_params.class}"
     Rails.logger.info "HANDLE_ACTION : #{posted_params}"
     slaction = Slaction.new(posted_params)
     

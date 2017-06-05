@@ -22,7 +22,7 @@ class FileDB
     user_hash[:team_domain] = params_data[:team_domain]
     user_hash[:channel_id] = params_data[:channel_id]
     user_hash[:channel_name] = params_data[:channel_name]
-    user_hash[:slash_respurl] = params_data[:response_url]
+    user_hash[:slack_respurl] = params_data[:response_url]
     save_data(@filetag)
   end
 
