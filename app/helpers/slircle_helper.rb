@@ -94,7 +94,7 @@ module SlircleHelper
   end
 
   def handle_action(posted_params)
-    Rails.logger.info "HANDLE_ACTION : #{posted_params.keys}"
+    Rails.logger.info "HANDLE_ACTION : #{posted_params}"
     slaction = Slaction.new(posted_params)
     
     case slaction.action
@@ -131,6 +131,7 @@ module SlircleHelper
     hash_response = respo.parsed_response
     Rails.logger.info "CIRCLECI CLASS : #{respo.class}"
     Rails.logger.info "CIRCLECI CLASS : #{hash_response}"
+
   end
 
 
