@@ -21,3 +21,4 @@
 
 config/database.yml
 config/application.yml
+slack_data.yml

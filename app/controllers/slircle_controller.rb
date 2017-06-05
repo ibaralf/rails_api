@@ -8,22 +8,22 @@ class SlircleController < ApplicationController
     #json_response(resp)
   end
 
+  # POST /slash
   def parseit
     puts "PASSED PARAMS: #{params}"
     token = params[:token]
-    Rails.logger.info "Year: #{Time.now.year}"
     Rails.logger.info "%%%%%%% ALL PARAMS : #{params}"
-    resp = {'status': 200, 'message': 'GOT IT!', 'read':token}
-
-    resp = get_instance_message
-
+    #resp = {'status': 200, 'message': 'GOT IT!', 'read':token}
+    resp = handle_slash_command(params)
     render :json => resp, :status => 200
   end
 
   def slash_action
     Rails.logger.info "SELECTED_INSTANCE PARAMS : #{params.to_s}"
+    allp = params[:payload]
+    Rails.logger.info "ALL PARM : #{allp.to_s}"
     # resp = {'status': 200, 'message': 'SELECTED!'}
-    resp = handle_action(params)
+    resp = handle_action(allp)
     render :json => resp, :status => 200
   end
   
