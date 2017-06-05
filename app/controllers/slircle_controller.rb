@@ -19,9 +19,9 @@ class SlircleController < ApplicationController
   end
 
   def slash_action
-    Rails.logger.info "SELECTED_INSTANCE PARAMS : #{params.to_s}"
+    Rails.logger.info "SELECTED_INSTANCE PARAMS : #{params}"
     allp = params[:payload]
-    Rails.logger.info "ALL PARM : #{allp.to_s}"
+#    Rails.logger.info "ALL PARM : #{allp.to_s}"
     # resp = {'status': 200, 'message': 'SELECTED!'}
     resp = handle_action(allp)
     render :json => resp, :status => 200
