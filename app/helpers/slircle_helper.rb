@@ -29,7 +29,7 @@ module SlircleHelper
           { "name": "instance",
           "text": "Production",
           "type": "button",
-          "value": "prod" },
+          "value": "production" },
           { "name": "instance",
           "text": "Release",
           "type": "button",
