@@ -22,3 +22,6 @@
 config/database.yml
 config/application.yml
 slack_data.yml
+cci.txt
+slack.txt
+slashapp.txt

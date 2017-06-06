@@ -2,11 +2,7 @@ require 'yaml'
 
 class FileDB
 
-  # attr_accessor :team_id, :team_domain, :channel_id, :channel_name, :user_id, :user_name, :command, :text, :slash_respurl,
-
-
   LOCAL_FILEDB = 'slack_data.yml'
-  #TOKEN_FILES = token_data.yml
   
   def initialize(filetag = LOCAL_FILEDB)
     @filetag = filetag
@@ -28,8 +24,9 @@ class FileDB
     save_data(@filetag)
   end
 
-  # Saves response from slash action
-  # {"payload”:”{“actions":[{"name":"instance","type":"select","selected_options":[{"value":"wrangler"}]}],
+  # Saves response from slash action. 
+  # NOTE!!!: Slash passes the payload value as a String
+  # Ex: {"payload”:”{“actions":[{"name":"instance","type":"select","selected_options":[{"value":"wrangler"}]}],
   # "callback_id":"selected_instance","team":{"id":"T0250S4K1","domain":"thredup"},"channel":{"id":"C02FLF1AX","name":"web"},
   # "user":{"id":"U4XKUCBGQ","name":"ibarra"},"action_ts":"1496433898.883423","message_ts":"1496433887.483392","attachment_id":"1",
   # "token":"o6ogpOUawimQXxlfbTKA44dQ","is_app_unfurl":false,"response_url":"https://hooks.slack.com/actions/T0250S4K1/192013544835/sN4bih0YVaigiYMBtptrTc1J"}"}
@@ -46,13 +43,8 @@ class FileDB
       actions_hash[:value] = payload['actions'][0]['value']
     end
     actions_hash[:respurl] = payload['response_url']
-
     @user_hash[action_name.to_sym] = actions_hash
     @user_hash[:last_action] = action_name
-    #@user_hash[action_name.to_sym] = payload['actions'][0]['name']
-    #@user_hash[:action_type] = payload['actions'][0]['type']
-    #@user_hash[:action_value] = payload['actions'][0]['selected_options'][0]['value']
-    #@user_hash[:action_respurl] = payload['response_url']
     @user_hash[:attachment_id] = payload['attachment_id']
     @user_hash[:callback_id] = payload['callback_id']
     save_data(@filetag)

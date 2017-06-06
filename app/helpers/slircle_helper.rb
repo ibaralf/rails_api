@@ -2,6 +2,7 @@ require 'net/http'
 require 'json'
 require 'uri'
 require_relative '../models/file_db'
+require_relative '../models/tokenz'
 
 module SlircleHelper
 
@@ -97,6 +98,8 @@ module SlircleHelper
     return instance_json
   end
 
+  # TODO: 
+  #  implement verify token (slashapp token)
   def handle_action(posted_params)
     Rails.logger.info "HANDLE_ACTION : #{posted_params.class}"
     Rails.logger.info "HANDLE_ACTION : #{posted_params}"
@@ -116,6 +119,11 @@ module SlircleHelper
     
   end
 
+  def get_tokens()
+    tokenz = Tokenz.new()
+    tokenz.to_s
+  end
+
 
   private
 
@@ -124,7 +132,7 @@ module SlircleHelper
     actval = @file_db.get_action_value(:instance)
     Rails.logger.info "ACTION VALUE: #{actval}"
     if actval == 'cancel'
-      res = { "text": "You cancelled test. Hope you try it again later."}
+      res = { "text": "You cancelled the test. Hope you try it again later."}
       return res
     end
     get_specs_message
@@ -135,12 +143,17 @@ module SlircleHelper
     post_circleci()
   end
 
+  # TODO:
+  #  - catch Net:: exceptions
+  #  - refactor and clean up
   def post_circleci()
     instance = @file_db.get_action_value(:instance)
     specs = @file_db.get_action_value(:spec_selected)
     Rails.logger.info "API To CircleCI : #{instance} :: #{specs}"
-    uri = URI("https://circleci.com/api/v1/project/thredup/tup-shop-automation/tree/master?circle-token=dc72a15d4d7e1cb81f62057f3f72620417620742")
-    #uri = URI.parse(url)
+    base_url = 'https://circleci.com/api/v1/project/thredup/tup-shop-automation/tree/master?circle-token='
+    cci_token = Tokenz.get_circleci_token
+    url = base_url + cci_token
+    uri = URI(url)
     param_body = {"build_parameters":{"RUN_BUILD":"true","USER_INSTANCE": instance, "SELECTED_SPECS": specs}}.to_json
     #http = Net::HTTP.new(uri.host, uri.port)
     #req = Net::HTTP::Post.new(uri.path, 'Content-Type' => 'application/json')
@@ -148,8 +161,13 @@ module SlircleHelper
     #req = Net::HTTP::Post.new uri 
     req = Net::HTTP::Post.new(uri, 'Content-Type' => 'application/json')
     req.body = param_body
-    respo = Net::HTTP.start(uri.host, uri.port, 
+    begin
+      respo = Net::HTTP.start(uri.host, uri.port, 
         :use_ssl => uri.scheme == 'https') {|http| http.request req}
+    rescue StandardError
+      resulta = { "text": "CircleCI API returned an error - check status of circleCI. Thanks."}
+      return resulta
+    end
     json_data = JSON.parse(respo.body)
     Rails.logger.info "CIRCLECI CLASS : #{respo.class}"
     Rails.logger.info "CIRCLECI CLASS : #{respo.body}"
@@ -157,6 +175,8 @@ module SlircleHelper
     result_link = { "text": "See results in #{json_data['build_url']}"}
     return result_link
   end
+
+
 
 
   
