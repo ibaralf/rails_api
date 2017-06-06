@@ -35,13 +35,27 @@ class FileDB
   # "token":"o6ogpOUawimQXxlfbTKA44dQ","is_app_unfurl":false,"response_url":"https://hooks.slack.com/actions/T0250S4K1/192013544835/sN4bih0YVaigiYMBtptrTc1J"}"}
   def action_add(payload)
     @user_hash = get_user(payload['user']['id'])
-    @user_hash[:action_name] = payload['actions'][0]['name']
-    @user_hash[:action_type] = payload['actions'][0]['type']
-    @user_hash[:action_value] = payload['actions'][0]['selected_options'][0]['value']
-    @user_hash[:action_respurl] = payload['response_url']
+    action_name = payload['actions'][0]['name']
+    
+    actions_hash = {}
+    actions_hash[:name] = action_name
+    actions_hash[:type] = payload['actions'][0]['type']
+    actions_hash[:value] = payload['actions'][0]['selected_options'][0]['value']
+    actions_hash[:respurl] = payload['response_url']
+
+    @user_hash[action_name.to_sym] = actions_hash
+    @user_hash[:last_action] = action_name
+    #@user_hash[action_name.to_sym] = payload['actions'][0]['name']
+    #@user_hash[:action_type] = payload['actions'][0]['type']
+    #@user_hash[:action_value] = payload['actions'][0]['selected_options'][0]['value']
+    #@user_hash[:action_respurl] = payload['response_url']
     @user_hash[:attachment_id] = payload['attachment_id']
     @user_hash[:callback_id] = payload['callback_id']
     save_data(@filetag)
+  end
+
+  def get_action_value(action_sym)
+    @user_hash[action_sym][:value]
   end
 
   def get_value(symtag)

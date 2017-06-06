@@ -1,4 +1,6 @@
-require 'httparty'
+require 'net/http'
+require 'json'
+require 'uri'
 require_relative '../models/file_db'
 
 module SlircleHelper
@@ -79,6 +81,8 @@ module SlircleHelper
             "options": [
               { "text": "All",
                 "value": "all" },
+              { "text": "Sample Test",
+                "value": "sample_test.rb" },
               { "text": "My Thredup Preference",
                 "value": "my_thredup_sizes_spec.rb" },
               { "text": "Search and Size filter",
@@ -100,7 +104,7 @@ module SlircleHelper
     @file_db.action_add(posted_params)
     #slaction = Slaction.new(posted_params)
     
-    case @file_db.get_value(:action_name)
+    case @file_db.get_value(:last_action)
     when 'instance'
       action_instance_selected(posted_params)
       #post_circleci(slaction.action_value)
@@ -116,30 +120,51 @@ module SlircleHelper
   private
 
   def action_instance_selected(req_params)
-    file_db = FileDB.new()
-    file_db.action_add(req_params)
+    @file_db.action_add(req_params)
     get_specs_message
   end
 
   def action_spec_selected(req_params)
-    file_db = FileDB.new()
-    file_db.action_add(req_params)
-    post_circleci(file_db.action_value)
+    @file_db.action_add(req_params)
+    post_circleci()
   end
 
-  def post_circleci(which_instance)
-    respo = HTTParty.post(
-      "https://circleci.com/api/v1/project/thredup/tup-shop-automation/tree/master?circle-token=dc72a15d4d7e1cb81f62057f3f72620417620742", 
-      headers: { 'Content-Type' => 'application/json' },
-      body: {"build_parameters":{"RUN_BUILD":"true","USER_INSTANCE":"zoolander", "SELECTED_SPECS":"sample_test.rb"}}.to_json
-      )
-    hash_response = respo.parsed_response
+  def post_circleci()
+    instance = @file_db.get_action_value(:instance)
+    specs = @file_db.get_action_value(:spec_selected)
+    Rails.logger.info "API To CircleCI : #{instance} :: #{specs}"
+    #respo = HTTParty.post(
+    #  "https://circleci.com/api/v1/project/thredup/tup-shop-automation/tree/master?circle-token=dc72a15d4d7e1cb81f62057f3f72620417620742", 
+    #  headers: { 'Content-Type' => 'application/json' },
+    ##  body: {"build_parameters":{"RUN_BUILD":"true","USER_INSTANCE": instance, "SELECTED_SPECS": specs}}.to_json, 
+     # format: :json
+     # )
+
+   # respo = RestClient.post "https://circleci.com/api/v1/project/thredup/tup-shop-automation/tree/master?circle-token=dc72a15d4d7e1cb81f62057f3f72620417620742", 
+   #   {"build_parameters":{"RUN_BUILD":"true","USER_INSTANCE": instance, "SELECTED_SPECS": specs}}.to_json,
+   #   :content_type => :json, 
+   #   :accept => :json
+
+    uri = URI("https://circleci.com/api/v1/project/thredup/tup-shop-automation/tree/master?circle-token=dc72a15d4d7e1cb81f62057f3f72620417620742")
+    #uri = URI.parse(url)
+    param_body = {"build_parameters":{"RUN_BUILD":"true","USER_INSTANCE": instance, "SELECTED_SPECS": specs}}.to_json
+    #http = Net::HTTP.new(uri.host, uri.port)
+    #req = Net::HTTP::Post.new(uri.path, 'Content-Type' => 'application/json')
+    #req.body = param_body
+    #req = Net::HTTP::Post.new uri 
+    req = Net::HTTP::Post.new(uri, 'Content-Type' => 'application/json')
+    req.body = param_body
+    respo = Net::HTTP.start(uri.host, uri.port, 
+        :use_ssl => uri.scheme == 'https') {|http| http.request req}
+    json_data = JSON.parse(respo.body)
     Rails.logger.info "CIRCLECI CLASS : #{respo.class}"
-    Rails.logger.info "CIRCLECI CLASS : #{hash_response}"
-
+    Rails.logger.info "CIRCLECI CLASS : #{respo.body}"
+    Rails.logger.info "CIRCLECI CLASS : #{json_data['build_url']}"
+    result_link = { "text": "See results in #{json_data['build_url']}"}
+    return result_link
   end
 
 
-
+  
 
 end
