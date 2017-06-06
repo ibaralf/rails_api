@@ -40,7 +40,11 @@ class FileDB
     actions_hash = {}
     actions_hash[:name] = action_name
     actions_hash[:type] = payload['actions'][0]['type']
-    actions_hash[:value] = payload['actions'][0]['selected_options'][0]['value']
+    if actions_hash[:type] == 'select'
+      actions_hash[:value] = payload['actions'][0]['selected_options'][0]['value']
+    else
+      actions_hash[:value] = payload['actions'][0]['value']
+    end
     actions_hash[:respurl] = payload['response_url']
 
     @user_hash[action_name.to_sym] = actions_hash
