@@ -121,6 +121,12 @@ module SlircleHelper
 
   def action_instance_selected(req_params)
     @file_db.action_add(req_params)
+    actval = @file_db.get_action_value(:instance)
+    Rails.logger.info "ACTION VALUE: #{actval}"
+    if actval == 'cancel'
+      res = { "text": "You cancelled test. Hope you try it again later."}
+      return res
+    end
     get_specs_message
   end
 
@@ -133,18 +139,6 @@ module SlircleHelper
     instance = @file_db.get_action_value(:instance)
     specs = @file_db.get_action_value(:spec_selected)
     Rails.logger.info "API To CircleCI : #{instance} :: #{specs}"
-    #respo = HTTParty.post(
-    #  "https://circleci.com/api/v1/project/thredup/tup-shop-automation/tree/master?circle-token=dc72a15d4d7e1cb81f62057f3f72620417620742", 
-    #  headers: { 'Content-Type' => 'application/json' },
-    ##  body: {"build_parameters":{"RUN_BUILD":"true","USER_INSTANCE": instance, "SELECTED_SPECS": specs}}.to_json, 
-     # format: :json
-     # )
-
-   # respo = RestClient.post "https://circleci.com/api/v1/project/thredup/tup-shop-automation/tree/master?circle-token=dc72a15d4d7e1cb81f62057f3f72620417620742", 
-   #   {"build_parameters":{"RUN_BUILD":"true","USER_INSTANCE": instance, "SELECTED_SPECS": specs}}.to_json,
-   #   :content_type => :json, 
-   #   :accept => :json
-
     uri = URI("https://circleci.com/api/v1/project/thredup/tup-shop-automation/tree/master?circle-token=dc72a15d4d7e1cb81f62057f3f72620417620742")
     #uri = URI.parse(url)
     param_body = {"build_parameters":{"RUN_BUILD":"true","USER_INSTANCE": instance, "SELECTED_SPECS": specs}}.to_json
