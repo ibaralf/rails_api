@@ -50,6 +50,16 @@ class FileDB
     save_data(@filetag)
   end
 
+  def user_add_instance(instance_passed)
+    actions_hash = {}
+    actions_hash[:name] = 'instance'
+    actions_hash[:type] = 'user_passed'
+    actions_hash[:value] = instance_passed
+    @user_hash[:instance] = actions_hash
+    puts "SAVING DATA #{@user_hash}"
+    save_data(@filetag)
+  end
+
   def get_action_value(action_sym)
     @user_hash[action_sym][:value]
   end

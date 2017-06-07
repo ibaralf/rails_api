@@ -1,3 +1,4 @@
+
 class SlircleController < ApplicationController
   include SlircleHelper
 
@@ -18,6 +19,7 @@ class SlircleController < ApplicationController
     render :json => resp, :status => 200
   end
 
+  # POST /slash_action
   def slash_action
     Rails.logger.info "SELECTED_INSTANCE PARAMS : #{params}"
     allp = JSON.parse(params[:payload])
