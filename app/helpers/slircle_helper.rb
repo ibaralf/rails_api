@@ -10,9 +10,9 @@ module SlircleHelper
   # REFACTOR!!! - new methods to handle if instance - yes/no, if 
   # 
   def handle_slash_command(req_params)
-    file_db = FileDB.new()
-    file_db.add(req_params)
-    parsed = parse_text(file_db.get_value(:text))
+    @file_db = FileDB.new()
+    @file_db.add(req_params)
+    parsed = parse_text(@file_db.get_value(:text))
     Rails.logger.info "Parsed Value: #{parsed}"
     if parsed["is_empty"]
       return get_instance_message
@@ -20,13 +20,13 @@ module SlircleHelper
       set_class_vars
       if @instances.values.include?(parsed["instance"])
         Rails.logger.info "USER PASSED: #{parsed["instance"]}"
-        file_db.user_add_instance(parsed["instance"])
+        @file_db.user_add_instance(parsed["instance"])
         passed_specs = get_specs(parsed["specs"])
         if passed_specs.empty?
           return get_specs_message
         else
-
-
+          spec_string = convert_specs_string(passed_specs)
+          post_circleci(spec_string)
         end
       else
         Rails.logger.info "INSTANCE NOT FOUND: #{parsed["instance"]}"
@@ -81,9 +81,14 @@ module SlircleHelper
   # TODO:
   #  - catch Net:: exceptions
   #  - refactor and clean up
-  def post_circleci()
+  def post_circleci(user_specs = nil)
     instance = @file_db.get_action_value(:instance)
-    specs = @file_db.get_action_value(:spec_selected)
+    if user_specs.nil?
+      specs = @file_db.get_action_value(:spec_selected)
+    else
+      specs = user_specs
+    end
+    
     Rails.logger.info "API To CircleCI : #{instance} :: #{specs}"
     base_url = 'https://circleci.com/api/v1/project/thredup/tup-shop-automation/tree/master?circle-token='
     cci_token = Tokenz.get_circleci_token
@@ -217,9 +222,14 @@ module SlircleHelper
   end
 
   def add_rb_extensions(arrspecs)
+    pattern = /.*\.rb/
     rarr = []
     arrspecs.each do |unspec|
-      rarr << unspec + ".rb"
+      if pattern =~ unspec
+        rarr << unspec
+      else
+        rarr << unspec + ".rb"
+      end
     end
     return rarr
   end
@@ -234,6 +244,12 @@ module SlircleHelper
     return valid_specs
   end
 
-  
+  def convert_specs_string(specs_arr)
+    rval = ""
+    specs_arr.each do |unspec|
+      rval << "#{unspec} "
+    end
+    return rval.strip
+  end
 
 end
