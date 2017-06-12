@@ -92,6 +92,7 @@ module SlircleHelper
     Rails.logger.info "API To CircleCI : #{instance} :: #{specs}"
     base_url = 'https://circleci.com/api/v1/project/thredup/tup-shop-automation/tree/master?circle-token='
     cci_token = Tokenz.get_circleci_token
+    puts "ZZZ: #{cci_token}"
     url = base_url + cci_token
     uri = URI(url)
     param_body = {"build_parameters":{"RUN_BUILD":"true","USER_INSTANCE": instance, "SELECTED_SPECS": specs}}.to_json
