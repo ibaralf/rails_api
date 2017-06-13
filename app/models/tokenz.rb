@@ -75,9 +75,13 @@ class Tokenz
     EncryptionHelper.decrypt(get_data(TOKENZ_FILE)[:slashapp_token])
   end
 
-  def self.get_channel_url
+  def self.get_channel_url(which_channel='default')
     yml_data = get_data(TOKENZ_FILE)
-    case EncryptionHelper.decrypt(yml_data[:channel])
+    chan_name = which_channel
+    if which_channel == 'default'
+      chan_name = EncryptionHelper.decrypt(yml_data[:channel])
+    end
+    case chan_name
     when 'shop_dev'
       EncryptionHelper.decrypt(yml_data[:shopdev_chan_url])
     when 'web'
@@ -86,7 +90,8 @@ class Tokenz
       EncryptionHelper.decrypt(yml_data[:testing_chan_url])
     end
   end
-  
+
+
   private
 
   def read_data(fname)

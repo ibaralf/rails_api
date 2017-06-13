@@ -73,6 +73,7 @@ class SiteCheckJob
   # Returns HTTP status as String
   def get_site_status(site_url)
     uri = URI.parse(site_url)
+    req_start = Time.now
     http = Net::HTTP.new(uri.host, uri.port)
     http.use_ssl = true
     request = Net::HTTP::Get.new(uri.request_uri)
@@ -82,7 +83,12 @@ class SiteCheckJob
       Rails.logger.info "Request error for site #{site_url}"
       return '-1'
     end
-    puts "STATUS: #{res.code}"
+    req_duration = Time.now - req_start
+    puts "STATUS: #{res.code} :: response time - #{req_duration}"
+    if req_duration > 7.0
+      hh = {:channel_url => Tokenz.get_channel_url('testing'), :text => "Thredup.com load time exceeded threshold - #{req_duration} sec"}
+      post_time_warning(hh)
+    end
     return res.code.to_s
   end
 
@@ -105,10 +111,26 @@ class SiteCheckJob
       return resulta
     end
     do_retry = respo.kind_of? Net::HTTPSuccess
-    #json_data = JSON.parse(respo.body)
-    ##Rails.logger.info "CIRCLECI CLASS : #{respo.class}"
-    #Rails.logger.info "CIRCLECI CLASS : #{respo.body}"
-    #Rails.logger.info "CIRCLECI CLASS : #{respo.status}"
+  end
+
+  def post_time_warning(phash)
+
+    channel_url = phash[:channel_url]
+    uri = URI.parse(channel_url)
+    http = Net::HTTP.new(uri.host, uri.port)
+    http.use_ssl = true
+    req = Net::HTTP::Post.new(uri.request_uri, 'Content-Type' => 'application/json')
+    param_body = { "text": phash[:text] }.to_json
+    req.body = param_body
+    begin
+      respo = Net::HTTP.start(uri.host, uri.port, 
+        :use_ssl => uri.scheme == 'https') {|http| http.request req}
+    rescue StandardError
+      resulta = { "text": "Post warning to Slack resulted in error."}
+      Rails.logger.info "SLack POST error : "
+      return resulta
+    end
+    do_retry = respo.kind_of? Net::HTTPSuccess
   end
 
   def debug_exit
