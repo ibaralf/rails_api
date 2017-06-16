@@ -18,7 +18,7 @@ module SlircleHelper
       return get_instance_message
     else
       if @instances.values.include?(parsed["instance"])
-        @file_db.user_add_instance(parsed["instance"])
+        @file_db.user_add_instance(req_params[:user_id], parsed["instance"])
         passed_specs = get_specs(parsed["specs"])
         if passed_specs.empty?
           return get_specs_message
@@ -53,6 +53,7 @@ module SlircleHelper
   private
 
   def token_authenticate
+    @tokenz = Tokenz.new
     if request.remote_ip == "127.0.0.1"
       return true
     elsif ! is_authorized?(params)
@@ -61,7 +62,6 @@ module SlircleHelper
   end
 
   def is_authorized?(req_params)
-    @tokenz = Tokenz.new
     token = nil
     if req_params[:token].nil? && ! req_params[:payload].nil?
       payload = JSON.parse(req_params[:payload])
