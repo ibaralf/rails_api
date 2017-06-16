@@ -36,6 +36,7 @@ module SlircleHelper
   # TODO: 
   #  implement verify token (slashapp token)
   def handle_action(posted_params)
+    set_option_vars
     #Rails.logger.info "HANDLE_ACTION : #{posted_params}"
     @file_db = FileDB.new()
     @file_db.action_add(posted_params)
