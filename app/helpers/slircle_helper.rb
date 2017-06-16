@@ -33,8 +33,6 @@ module SlircleHelper
     end
   end
 
-  # TODO: 
-  #  implement verify token (slashapp token)
   def handle_action(posted_params)
     set_option_vars
     #Rails.logger.info "HANDLE_ACTION : #{posted_params}"
@@ -90,7 +88,9 @@ module SlircleHelper
 
   def action_spec_selected(req_params)
     @file_db.action_add(req_params)
-    post_circleci()
+    selspecs = @file_db.get_action_value(:spec_selected).strip
+    formatted_specs = convert_specs_string(selspecs.split(" "))
+    post_circleci(formatted_specs)
   end
 
   # TODO:
@@ -114,63 +114,6 @@ module SlircleHelper
     #Rails.logger.info "CIRCLECI CLASS : #{json_data['build_url']}"
     result_link = { "text": "See results in #{json_data['build_url']}"}
     return result_link
-  end
-
-  #######################  SLACK MESSAGES #########################
-
-  def get_instance_message
-    dropdown_options = get_instance_dropdowns
-    instance_json = {
-      "text": "Did you want to run a test?",
-      "attachments": [ {  
-        "text": "Choose environment to execute test.",
-        "fallback": "You need to specify test instance.",
-        "callback_id": "selected_instance",
-        "color": "#3AA3E3",
-        "attachment_type": "default",
-        "actions": [ 
-          { "name": "instance",
-          "text": "Production",
-          "type": "button",
-          "value": "production" },
-          { "name": "instance",
-          "text": "Release",
-          "type": "button",
-          "value": "release" },
-
-          { "name": "instance",
-            "text": "Select environment",
-            "type": "select",
-            "options": dropdown_options },
-          { "name": "instance",
-          "text": "cancel",
-          "style": "danger",
-          "type": "button",
-          "value": "cancel" }
-       ]
-    } ] }
-    return instance_json
-  end
-
-  def get_specs_message
-    dropdown_options = get_spec_dropdowns
-
-    instance_json = {
-      "text": "Select spec test to execute?",
-      "attachments": [ {  
-        "text": "Select spec test.",
-        "fallback": "Defaults to run all spec.",
-        "callback_id": "selected_spec",
-        "color": "#3AA3E3",
-        "attachment_type": "default",
-        "actions": [ 
-          { "name": "spec_selected",
-            "text": "Tests to run",
-            "type": "select",
-            "options": dropdown_options }
-       ]
-    } ] }
-    return instance_json
   end
 
   def parse_text(txt)
@@ -239,5 +182,66 @@ module SlircleHelper
     end
     return rval.strip
   end
+
+
+#######################  SLACK MESSAGES #########################
+# TODO: Put in a YAML file 
+#
+
+  def get_instance_message
+    dropdown_options = get_instance_dropdowns
+    instance_json = {
+      "text": "Did you want to run a test?",
+      "attachments": [ {  
+        "text": "Choose environment to execute test.",
+        "fallback": "You need to specify test instance.",
+        "callback_id": "selected_instance",
+        "color": "#3AA3E3",
+        "attachment_type": "default",
+        "actions": [ 
+          { "name": "instance",
+          "text": "Production",
+          "type": "button",
+          "value": "production" },
+          { "name": "instance",
+          "text": "Release",
+          "type": "button",
+          "value": "release" },
+
+          { "name": "instance",
+            "text": "Select environment",
+            "type": "select",
+            "options": dropdown_options },
+          { "name": "instance",
+          "text": "cancel",
+          "style": "danger",
+          "type": "button",
+          "value": "cancel" }
+       ]
+    } ] }
+    return instance_json
+  end
+
+  def get_specs_message
+    dropdown_options = get_spec_dropdowns
+
+    instance_json = {
+      "text": "Select spec test to execute?",
+      "attachments": [ {  
+        "text": "Select spec test.",
+        "fallback": "Defaults to run all spec.",
+        "callback_id": "selected_spec",
+        "color": "#3AA3E3",
+        "attachment_type": "default",
+        "actions": [ 
+          { "name": "spec_selected",
+            "text": "Tests to run",
+            "type": "select",
+            "options": dropdown_options }
+       ]
+    } ] }
+    return instance_json
+  end
+
 
 end
