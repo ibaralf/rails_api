@@ -56,7 +56,7 @@ class FileDB
     actions_hash[:type] = 'user_passed'
     actions_hash[:value] = instance_passed
     @user_hash[:instance] = actions_hash
-    puts "SAVING DATA #{@user_hash}"
+    # puts "SAVING DATA #{@user_hash}"
     save_data(@filetag)
   end
 
@@ -80,6 +80,10 @@ class FileDB
       return udata
     end
   end
+
+  def self.get_token(params_data)
+  end
+  
 
   private
 

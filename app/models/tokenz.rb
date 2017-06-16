@@ -7,7 +7,8 @@ require_relative '../helpers/encryption_helper'
 # Simplifies storing/reading sensitive data
 class Tokenz
 
-  attr_accessor :circleci_token, :slack_token, :slashapp_token, :testing_chan_url, :shopdev_chan_url, :web_chan_url, :channel
+  attr_accessor :circleci_url, :circleci_token, :slack_token, :slashapp_token, :testing_chan_url, 
+                :shopdev_chan_url, :web_chan_url, :channel
 
   TOKENZ_FILE = 'kenzfile.yml'
   
@@ -21,6 +22,7 @@ class Tokenz
   end
 
   def load_vars
+    @circleci_url = EncryptionHelper.decrypt(@yamlized_tokens[:circleci_url])
     @circleci_token = EncryptionHelper.decrypt(@yamlized_tokens[:circleci_token])
     @slack_token = EncryptionHelper.decrypt(@yamlized_tokens[:slack_token])
     @slashapp_token = EncryptionHelper.decrypt(@yamlized_tokens[:slashapp_token])
@@ -31,6 +33,7 @@ class Tokenz
   end
   
   def to_s
+    puts "CCI URL: #{@circleci_url}"
     puts "CCI: #{@circleci_token}"
     puts "SLACK: #{@slack_token}"
     puts "SLASHAPP: #{@slashapp_token}"
@@ -51,6 +54,7 @@ class Tokenz
   # Only used to initially generate the YAML file with needed data
   # NOTE: 
   def self.generate_tokenz_file(thash, fname)
+    thash[:circleci_url] = EncryptionHelper.encrypt(thash[:circleci_url])
     thash[:circleci_token] = EncryptionHelper.encrypt(thash[:circleci_token])
     thash[:slack_token] = EncryptionHelper.encrypt(thash[:slack_token])
     thash[:slashapp_token] = EncryptionHelper.encrypt(thash[:slashapp_token])

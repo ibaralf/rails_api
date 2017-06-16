@@ -10,16 +10,14 @@ module SlircleHelper
   # REFACTOR!!! - new methods to handle if instance - yes/no, if 
   # 
   def handle_slash_command(req_params)
+    set_option_vars
     @file_db = FileDB.new()
     @file_db.add(req_params)
     parsed = parse_text(@file_db.get_value(:text))
-    Rails.logger.info "Parsed Value: #{parsed}"
     if parsed["is_empty"]
       return get_instance_message
     else
-      set_class_vars
       if @instances.values.include?(parsed["instance"])
-        Rails.logger.info "USER PASSED: #{parsed["instance"]}"
         @file_db.user_add_instance(parsed["instance"])
         passed_specs = get_specs(parsed["specs"])
         if passed_specs.empty?
@@ -38,8 +36,7 @@ module SlircleHelper
   # TODO: 
   #  implement verify token (slashapp token)
   def handle_action(posted_params)
-    Rails.logger.info "HANDLE_ACTION : #{posted_params.class}"
-    Rails.logger.info "HANDLE_ACTION : #{posted_params}"
+    #Rails.logger.info "HANDLE_ACTION : #{posted_params}"
     @file_db = FileDB.new()
     @file_db.action_add(posted_params)
     
@@ -54,13 +51,30 @@ module SlircleHelper
     
   end
 
-  def get_tokens()
-    tokenz = Tokenz.new()
-    tokenz.to_s
+  private
+
+  def token_authenticate
+    if request.remote_ip == "127.0.0.1"
+      return true
+    elsif ! is_authorized?(params)
+      render :json => {'status': 401, 'message': "Unauthorized" }, :status => 401
+    end
   end
 
-
-  private
+  def is_authorized?(req_params)
+    @tokenz = Tokenz.new
+    token = nil
+    if req_params[:token].nil? && ! req_params[:payload].nil?
+      payload = JSON.parse(req_params[:payload])
+      token = payload['token']
+    else
+      token = req_params[:token]
+    end
+    if @tokenz.slashapp_token != token
+      return false
+    end
+    return true
+  end
 
   def action_instance_selected(req_params)
     @file_db.action_add(req_params)
@@ -82,37 +96,21 @@ module SlircleHelper
   #  - catch Net:: exceptions
   #  - refactor and clean up
   def post_circleci(user_specs = nil)
+    
     instance = @file_db.get_action_value(:instance)
     if user_specs.nil?
       specs = @file_db.get_action_value(:spec_selected)
     else
       specs = user_specs
     end
-    
     Rails.logger.info "API To CircleCI : #{instance} :: #{specs}"
-    base_url = 'https://circleci.com/api/v1/project/thredup/tup-shop-automation/tree/master?circle-token='
-    cci_token = Tokenz.get_circleci_token
-    puts "ZZZ: #{cci_token}"
-    url = base_url + cci_token
-    uri = URI(url)
-    param_body = {"build_parameters":{"RUN_BUILD":"true","USER_INSTANCE": instance, "SELECTED_SPECS": specs}}.to_json
-    #http = Net::HTTP.new(uri.host, uri.port)
-    #req = Net::HTTP::Post.new(uri.path, 'Content-Type' => 'application/json')
-    #req.body = param_body
-    #req = Net::HTTP::Post.new uri 
-    req = Net::HTTP::Post.new(uri, 'Content-Type' => 'application/json')
-    req.body = param_body
-    begin
-      respo = Net::HTTP.start(uri.host, uri.port, 
-        :use_ssl => uri.scheme == 'https') {|http| http.request req}
-    rescue StandardError
-      resulta = { "text": "CircleCI API returned an error - check status of circleCI. Thanks."}
-      return resulta
-    end
+    url = @tokenz.circleci_url + @tokenz.circleci_token
+    payload = {"build_parameters":{"RUN_BUILD":"true","USER_INSTANCE": instance, "SELECTED_SPECS": specs}}
+    request_hash = {:url => url, :payload => payload}
+    respo = HttpHelper.post(request_hash)
     json_data = JSON.parse(respo.body)
-    Rails.logger.info "CIRCLECI CLASS : #{respo.class}"
-    Rails.logger.info "CIRCLECI CLASS : #{respo.body}"
-    Rails.logger.info "CIRCLECI CLASS : #{json_data['build_url']}"
+    #Rails.logger.info "CIRCLECI CLASS : #{respo.body}"
+    #Rails.logger.info "CIRCLECI CLASS : #{json_data['build_url']}"
     result_link = { "text": "See results in #{json_data['build_url']}"}
     return result_link
   end
@@ -120,6 +118,7 @@ module SlircleHelper
   #######################  SLACK MESSAGES #########################
 
   def get_instance_message
+    dropdown_options = get_instance_dropdowns
     instance_json = {
       "text": "Did you want to run a test?",
       "attachments": [ {  
@@ -141,23 +140,7 @@ module SlircleHelper
           { "name": "instance",
             "text": "Select environment",
             "type": "select",
-            "options": [
-              { "text": "Burgundy",
-                "value": "burgundy" },
-              { "text": "EC2",
-                "value": "ec2" },
-              { "text": "Selfoss",
-              "value": "selfoss" },
-              { "text": "Stage3",
-                "value": "stage3" },
-              { "text": "Thredtest",
-                "value": "thredtest" },
-              { "text": "Wrangler",
-                "value": "wrangler" },
-              { "text": "Zoolander",
-                "value": "zoolander" }
-            ] },
-
+            "options": dropdown_options },
           { "name": "instance",
           "text": "cancel",
           "style": "danger",
@@ -169,6 +152,8 @@ module SlircleHelper
   end
 
   def get_specs_message
+    dropdown_options = get_spec_dropdowns
+
     instance_json = {
       "text": "Select spec test to execute?",
       "attachments": [ {  
@@ -181,18 +166,7 @@ module SlircleHelper
           { "name": "spec_selected",
             "text": "Tests to run",
             "type": "select",
-            "options": [
-              { "text": "Sample Test",
-                "value": "sample_test.rb" },
-              { "text": "My Thredup Preference",
-                "value": "my_thredup_sizes_spec.rb" },
-              { "text": "Search and Size filter",
-              "value": "search_spec.rb" },
-              { "text": "Checkout",
-                "value": "checkout_spec.rb" },
-              { "text": "New User Signup",
-                "value": "signup_spec.rb" }
-            ] }
+            "options": dropdown_options }
        ]
     } ] }
     return instance_json
@@ -214,27 +188,34 @@ module SlircleHelper
 
   end
 
-  def set_class_vars
-    @instances = {"Production" => "production", "Release" => "release", "Burgundy" => "burgundy", "EC2" => "ec2",
-              "Selfoss" => "selfoss", "Stage3" => "stage3", "Thredtest" => "thredtest", "Wrangler" => "wrangler",
-              "Zoolander" => "zoolander"}
+  def set_option_vars
+    @instances = {"Burgundy" => "burgundy", "EC2" => "ec2", "Selfoss" => "selfoss", "Stage3" => "stage3", "Thredtest" => "thredtest", 
+                  "Wrangler" => "wrangler", "Zoolander" => "zoolander", "Production" => "production", "Release" => "release"}
+    @specs = {"My Thredup- Sizes" => "my_thredup_sizes_spec", "Search" => "search_spec", "Checkout" => "checkout_spec", 
+              "Signup" => "signup_spec", "Cleanout" => "cleanout_spec"}
     @specs_available = ["sample_test", "my_thredup_sizes_spec", "search_spec", "checkout_spec",
-                    "signup_spec", "amazon_login_spec", "facebook_login_spec"]
+                    "signup_spec", "amazon_login_spec", "facebook_login_spec", "cleanout_spec"]
   end
 
-  def add_rb_extensions(arrspecs)
-    pattern = /.*\.rb/
+  def get_instance_dropdowns
     rarr = []
-    arrspecs.each do |unspec|
-      if pattern =~ unspec
-        rarr << unspec
-      else
-        rarr << unspec + ".rb"
-      end
+    @instances.keys.each do |unkey|
+      rarr << { "text": unkey, "value": @instances[unkey] }
     end
     return rarr
   end
-                  
+
+  def get_spec_dropdowns
+    rarr = []
+    all_specs = ""
+    @specs.keys.each do |unkey|
+      all_specs.concat("#{@specs[unkey]} ")
+      rarr << { "text": unkey, "value": @specs[unkey] }
+    end
+    rarr.unshift({"text": "All", "value": all_specs.strip})
+    return rarr
+  end
+
   def get_specs(pspec)
     valid_specs = []
     pspec.each do |unspec|
@@ -246,9 +227,14 @@ module SlircleHelper
   end
 
   def convert_specs_string(specs_arr)
+    pattern = /.*\.rb/
     rval = ""
     specs_arr.each do |unspec|
-      rval << "#{unspec} "
+      if pattern =~ unspec
+        rval << "#{unspec} "
+      else
+        rarr << "#{unspec}.rb"
+      end
     end
     return rval.strip
   end

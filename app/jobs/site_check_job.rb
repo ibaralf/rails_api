@@ -14,7 +14,7 @@ class SiteCheckJob
     site_code = get_site_status(url)
     if site_code == '200'
       if up_post
-        post_up_status
+        post_status(site_code)
       end
     elsif site_code == '-1'
       sleep(300)
@@ -22,10 +22,10 @@ class SiteCheckJob
     else
       Rails.logger.info "Site status down - #{site_code}"
       if down_post
-        post_down_status(site_code)
+        post_status(site_code)
       end
       if debug_exit
-        post_up_status
+        post_status(site_code)
       else
         sleep(60)
         perform(url, true, false)
@@ -52,85 +52,39 @@ class SiteCheckJob
 
   private
 
-  def post_up_status()
+  # TODO: Replace image snapshot - use gem 
+  def post_status(scode='200')
+    ts = Time.zone.now.strftime("%Y-%m-%d_%H:%M:%S")
+    if scode =='200'
+      text_msg = "ThredUP site is back UP - status code 200"
+      image_msg = "Uptime #{ts}"
+      image_url = 'https://i.imgur.com/uF1jxol.jpg'
+    else
+      text_msg = "ThredUP site is back UP - status code 200"
+      image_msg = "Uptime #{ts}"
+      image_url = 'https://i.imgur.com/VadPR4R.png'
+    end
     chan_url = Tokenz.get_channel_url
-    ts = Time.new.strftime("%Y-%m-%d_%H:%M:%S")
-    phash = {:channel_url => chan_url, 
-      :text => "ThredUP site is back UP - status code 200", :img_url => 'https://i.imgur.com/uF1jxol.jpg',
-      :img_text => "Uptime #{ts}"}
-    post_status(phash)
-  end
-
-  def post_down_status(scode)
-    chan_url = Tokenz.get_channel_url
-    ts = Time.new.strftime("%Y-%m-%d_%H:%M:%S")
-    phash = {:channel_url => chan_url, 
-      :text => "ThredUP site down - status code #{scode}", :img_url => 'https://i.imgur.com/VadPR4R.png',
-      :img_text => "Downtime #{ts}"}
-    post_status(phash)
+    payload = {"text": text_msg, "attachments": [{ "text": image_msg, "image_url": image_url}]}
+    request_hash = {:url => chan_url, :payload => payload}
+    HttpHelper.post(request_hash)
   end
 
   # Returns HTTP status as String
   def get_site_status(site_url)
-    uri = URI.parse(site_url)
     req_start = Time.now
-    http = Net::HTTP.new(uri.host, uri.port)
-    http.use_ssl = true
-    request = Net::HTTP::Get.new(uri.request_uri)
-    begin
-      res = http.request(request)
-    rescue StandardError
-      Rails.logger.info "Request error for site #{site_url}"
-      return '-1'
+    get_response = HttpHelper.get(site_url)
+    if get_response != '-1'
+      req_duration = Time.now - req_start
+      Rails.logger.info "STATUS: #{get_response.code} :: response time - #{req_duration}"
+      if req_duration > 4.0
+        payload = { "text": "Thredup.com load time exceeded threshold - #{req_duration} sec" }
+        request_hash = {:url => Tokenz.get_channel_url('testing'), :payload => payload}
+        HttpHelper.post(request_hash)
+      end
+      return get_response.code.to_s
     end
-    req_duration = Time.now - req_start
-    puts "STATUS: #{res.code} :: response time - #{req_duration}"
-    if req_duration > 7.0
-      hh = {:channel_url => Tokenz.get_channel_url('testing'), :text => "Thredup.com load time exceeded threshold - #{req_duration} sec"}
-      post_time_warning(hh)
-    end
-    return res.code.to_s
-  end
-
-  # phash = {:channel_url, :text, :img_url, :img_text}
-  def post_status(phash)
-
-    channel_url = phash[:channel_url]
-    uri = URI.parse(channel_url)
-    http = Net::HTTP.new(uri.host, uri.port)
-    http.use_ssl = true
-    req = Net::HTTP::Post.new(uri.request_uri, 'Content-Type' => 'application/json')
-    param_body = { "text": phash[:text], "attachments": [{ "text": phash[:img_text], "image_url": phash[:img_url] }] }.to_json
-    req.body = param_body
-    begin
-      respo = Net::HTTP.start(uri.host, uri.port, 
-        :use_ssl => uri.scheme == 'https') {|http| http.request req}
-    rescue StandardError
-      resulta = { "text": "CircleCI API returned an error - check status of circleCI. Thanks."}
-      Rails.logger.info "STATUS ERROR : "
-      return resulta
-    end
-    do_retry = respo.kind_of? Net::HTTPSuccess
-  end
-
-  def post_time_warning(phash)
-
-    channel_url = phash[:channel_url]
-    uri = URI.parse(channel_url)
-    http = Net::HTTP.new(uri.host, uri.port)
-    http.use_ssl = true
-    req = Net::HTTP::Post.new(uri.request_uri, 'Content-Type' => 'application/json')
-    param_body = { "text": phash[:text] }.to_json
-    req.body = param_body
-    begin
-      respo = Net::HTTP.start(uri.host, uri.port, 
-        :use_ssl => uri.scheme == 'https') {|http| http.request req}
-    rescue StandardError
-      resulta = { "text": "Post warning to Slack resulted in error."}
-      Rails.logger.info "SLack POST error : "
-      return resulta
-    end
-    do_retry = respo.kind_of? Net::HTTPSuccess
+    return '-1'
   end
 
   def debug_exit
