@@ -177,7 +177,7 @@ module SlircleHelper
       if pattern =~ unspec
         rval << "#{unspec} "
       else
-        rarr << "#{unspec}.rb"
+        rval << "#{unspec}.rb "
       end
     end
     return rval.strip
