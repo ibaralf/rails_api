@@ -136,9 +136,9 @@ module SlircleHelper
     @instances = {"Burgundy" => "burgundy", "EC2" => "ec2", "Selfoss" => "selfoss", "Stage3" => "stage3", "Thredtest" => "thredtest", 
                   "Wrangler" => "wrangler", "Zoolander" => "zoolander", "Production" => "production", "Release" => "release"}
     @specs = {"My Thredup- Sizes" => "my_thredup_sizes_spec", "Search" => "search_spec", "Checkout" => "checkout_spec", 
-              "Signup" => "signup_spec", "Cleanout" => "cleanout_spec"}
+              "Signup" => "signup_spec", "Cleanout" => "cleanout_spec", "Favorites" => "favorites_spec"}
     @specs_available = ["sample_test", "my_thredup_sizes_spec", "search_spec", "checkout_spec",
-                    "signup_spec", "amazon_login_spec", "facebook_login_spec", "cleanout_spec"]
+                    "signup_spec", "amazon_login_spec", "facebook_login_spec", "cleanout_spec", "favorites_spec"]
   end
 
   def get_instance_dropdowns
